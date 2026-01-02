@@ -62,6 +62,9 @@ try:
                               template="plotly_white", hovermode="x unified")
             
             st.plotly_chart(fig, use_container_width=True)
+            with st.expander("View Raw Forecast Data"):
+                df_forecast = forecast.pd_dataframe()
+                st.write(df_forecast)
             
             # 5. Metrics/Summary
             col1, col2 = st.columns(2)
