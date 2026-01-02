@@ -24,7 +24,7 @@ The core of this repository is a robust, model-agnostic pipeline designed for sc
 
 ```text
 ├── data/                        # Raw and processed datasets (CSV)
-├── models/                      # Saved .pth model weights and metadata
+├── models/                      # Saved .joblib model weights and metadata
 ├── images/                      # Visualization exports for documentation
 ├── time_series_analysis.ipynb   # Main research and training pipeline
 ├── utils.py                     # Core logic: evaluation, plotting, and grid search
