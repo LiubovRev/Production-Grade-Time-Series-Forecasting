@@ -1,5 +1,7 @@
 # 📈 Production-Grade Time Series Forecasting Pipeline
 
+### [🚀 Live Demo on Streamlit](https://gimde9eta2tywvxbumexmw.streamlit.app/)
+
 **From Naive Baselines to Machine Learning Deployment**
 
 This project demonstrates a **professional end-to-end forecasting workflow**. It moves beyond simple curve-fitting to explore how external signals (covariates) and machine learning (XGBoost) can significantly improve business-critical predictions.
@@ -55,6 +57,7 @@ Model	                      MAE	    MAPE
 Naive Seasonal (Baseline)	  6.1196  38.17%
 XGBoost (Tuned)            3.9199	  ~23.5%
 
-**Key Insight:** The tuned XGBoost model achieved a 36% reduction in error over the baseline, justifying the use of machine learning for this specific dataset.
----
+## Key Insight: 
+The tuned XGBoost model achieved a 36% reduction in error over the baseline, justifying the use of machine learning for this specific dataset.
+
 
