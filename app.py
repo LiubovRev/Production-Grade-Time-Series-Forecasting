@@ -63,9 +63,20 @@ try:
             
             st.plotly_chart(fig, use_container_width=True)
             with st.expander("View Raw Forecast Data"):
-                df_forecast = forecast.pd_dataframe()
-                st.write(df_forecast)
-            
+    
+                try:
+                    df_forecast = forecast.pd_dataframe()
+                    st.dataframe(df_forecast, use_container_width=True)
+                except AttributeError:
+                   
+                    st.write("Format conversion fallback:")
+                    df_forecast = pd.DataFrame(
+                        forecast.values(), 
+                        index=forecast.time_index, 
+                        columns=['Predicted Sales']
+                    )
+                    st.dataframe(df_forecast, use_container_width=True)
+                        
             # 5. Metrics/Summary
             col1, col2 = st.columns(2)
             col1.metric("Total Expected Sales", int(forecast.values().sum()))
