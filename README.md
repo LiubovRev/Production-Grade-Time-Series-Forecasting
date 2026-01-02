@@ -134,13 +134,3 @@ This enables fast qualitative diagnostics and stakeholder-friendly communication
 
 ---
 
-## 👤 Author
-
-**L. Revutska**  
-Data Scientist / Machine Learning Engineer  
-
----
-
-⭐ **Recruiter Note**  
-This project reflects how I approach real-world forecasting problems:  
-with rigor, clarity, and production-aware thinking.
