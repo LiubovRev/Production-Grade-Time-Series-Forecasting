@@ -53,9 +53,9 @@ We evaluate and compare three distinct tiers of models to find the optimal balan
 ## 📊 Results Summary
 
 After conducting a constrained grid search across 30 combinations of lags, tree depth, and learning rates, the results are summarized below:
-Model	                      MAE	    MAPE
-Naive Seasonal (Baseline)	  6.1196  38.17%
-XGBoost (Tuned)            3.9199	  ~23.5%
+Model	                      MAE	    MAPE  
+Naive Seasonal (Baseline)	  6.1196  38.17%  
+XGBoost (Tuned)            3.9199	  ~23.5%  
 
 ## Key Insight: 
 The tuned XGBoost model achieved a 36% reduction in error over the baseline, justifying the use of machine learning for this specific dataset.
