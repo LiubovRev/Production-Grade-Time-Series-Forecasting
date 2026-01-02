@@ -1,6 +1,6 @@
 # 📈 Production-Grade Time Series Forecasting Pipeline
 
-### [🚀 Live Demo on Streamlit](https://gimde9eta2tywvxbumexmw.streamlit.app/)
+### [🚀 Live Demo on Streamlit](https://iqnkddxgtwc6px7tc2l9hp.streamlit.app/)
 
 **From Naive Baselines to Machine Learning Deployment**
 
