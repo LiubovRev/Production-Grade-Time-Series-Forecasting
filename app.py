@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
+from pathlib import Path
 from darts import TimeSeries
 from darts.models import XGBModel
 import plotly.graph_objects as go
@@ -13,13 +15,23 @@ st.markdown("This application uses an optimized XGBoost model with cyclical cova
 # 1. Load Data & Model
 @st.cache_resource
 def load_assets():
-    model = XGBModel.load("models/xgb_best_model.pth")
-    # Load context data for prediction
-    train_df = pd.read_csv("data/last_train_data.csv", parse_dates=['date'])
-    cov_df = pd.read_csv("data/full_covariates.csv", parse_dates=['date'])
-    
+    BASE_DIR = Path(__file__).parent
+    model_path = BASE_DIR / "models" / "xgb_best_model.joblib"
+    train_path = BASE_DIR / "data" / "last_train_data.csv"
+    cov_path = BASE_DIR / "data" / "full_covariates.csv"
+
+    if not model_path.exists():
+        st.error(f"Model file not found at {model_path}")
+        st.stop()
+    model = joblib.load(model_path)
+   
+    train_df = pd.read_csv(train_path, parse_dates=['date'])
+    cov_df = pd.read_csv(cov_path, parse_dates=['date'])
+ 
     train_ts = TimeSeries.from_dataframe(train_df, time_col='date', value_cols='sales')
-    cov_ts = TimeSeries.from_dataframe(cov_df, time_col='date', value_cols=['dow_sin', 'dow_cos', 'month_sin', 'month_cos', 'is_weekend'])
+  
+    cov_cols = ['dow_sin', 'dow_cos', 'month_sin', 'month_cos', 'is_weekend']
+    cov_ts = TimeSeries.from_dataframe(cov_df, time_col='date', value_cols=cov_cols)
     
     return model, train_ts, cov_ts
 
