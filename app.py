@@ -1,86 +1,60 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
 from pathlib import Path
+
+import joblib
+import pandas as pd
+import streamlit as st
 from darts import TimeSeries
-from darts.models import XGBModel
-import plotly.graph_objects as go
 
-st.set_page_config(page_title="Sales Forecasting App", layout="wide")
+from utils import make_calendar_covariates, plot_forecasts
 
-st.title("📈 Demand Forecasting Dashboard")
-st.markdown("This application uses an optimized XGBoost model with cyclical covariates to predict future sales.")
+BASE_DIR = Path(__file__).parent
+MODEL_PATH = BASE_DIR / "models" / "xgb_final_model.joblib"
+HISTORY_PATH = BASE_DIR / "data" / "history.csv"
 
-# 1. Load Data & Model
+st.set_page_config(page_title="Demand Forecasting", layout="wide")
+st.title("Demand Forecasting Dashboard")
+
+
 @st.cache_resource
 def load_assets():
-    BASE_DIR = Path(__file__).parent
-    model_path = BASE_DIR / "models" / "xgb_best_model.joblib"
-    train_path = BASE_DIR / "data" / "last_train_data.csv"
-    cov_path = BASE_DIR / "data" / "full_covariates.csv"
+    bundle = joblib.load(MODEL_PATH)
+    history_df = pd.read_csv(HISTORY_PATH, parse_dates=["date"])
+    history = TimeSeries.from_dataframe(history_df, time_col="date", value_cols="sales", freq="D").astype("float32")
+    return bundle, history
 
-    if not model_path.exists():
-        st.error(f"Model file not found at {model_path}")
-        st.stop()
-    model = joblib.load(model_path)
-   
-    train_df = pd.read_csv(train_path, parse_dates=['date'])
-    cov_df = pd.read_csv(cov_path, parse_dates=['date'])
- 
-    train_ts = TimeSeries.from_dataframe(train_df, time_col='date', value_cols='sales')
-  
-    cov_cols = ['dow_sin', 'dow_cos', 'month_sin', 'month_cos', 'is_weekend']
-    cov_ts = TimeSeries.from_dataframe(cov_df, time_col='date', value_cols=cov_cols)
-    
-    return model, train_ts, cov_ts
 
-try:
-    model, train_ts, cov_ts = load_assets()
-    
-    # 2. Sidebar configuration
-    st.sidebar.header("Forecast Settings")
-    horizon = st.sidebar.slider("Forecast Horizon (days)", 1, 90, 30)
+if not MODEL_PATH.exists() or not HISTORY_PATH.exists():
+    st.error("Model or history not found. Run time_series_analysis.ipynb first.")
+    st.stop()
 
-    # 3. Prediction logic
-    if st.button("Generate Forecast"):
-        with st.spinner('Calculating...'):
-            forecast = model.predict(n=horizon, past_covariates=cov_ts)
-            
-            # 4. Visualization
-            fig = go.Figure()
-            # Show last 90 days of history for context
-            hist_subset = train_ts[-90:]
-            
-            fig.add_trace(go.Scatter(x=hist_subset.time_index, y=hist_subset.values().flatten(), 
-                                     name="History", line=dict(color="#2E86C1")))
-            fig.add_trace(go.Scatter(x=forecast.time_index, y=forecast.values().flatten(), 
-                                     name="Forecast", line=dict(color="#E67E22", dash='dash')))
-            
-            fig.update_layout(title=f"Sales Prediction for the next {horizon} days",
-                              xaxis_title="Date", yaxis_title="Units Sold",
-                              template="plotly_white", hovermode="x unified")
-            
-            st.plotly_chart(fig, use_container_width=True)
-            with st.expander("View Raw Forecast Data"):
-    
-                try:
-                    df_forecast = forecast.pd_dataframe()
-                    st.dataframe(df_forecast, use_container_width=True)
-                except AttributeError:
-                   
-                    st.write("Format conversion fallback:")
-                    df_forecast = pd.DataFrame(
-                        forecast.values(), 
-                        index=forecast.time_index, 
-                        columns=['Predicted Sales']
-                    )
-                    st.dataframe(df_forecast, use_container_width=True)
-                        
-            # 5. Metrics/Summary
-            col1, col2 = st.columns(2)
-            col1.metric("Total Expected Sales", int(forecast.values().sum()))
-            col2.metric("Peak Demand", int(forecast.values().max()))
+bundle, history = load_assets()
+model = bundle["model"]
 
-except FileNotFoundError:
-    st.error("Model file not found. Please run the notebook first to save the model.")
+st.markdown(
+    f"XGBoost with lagged sales and cyclical calendar covariates, trained on the full history "
+    f"({history.start_time().date()} to {history.end_time().date()}) for store {bundle['store']}, item {bundle['item']}. "
+    "Forecasts start the day after the last observation."
+)
+
+horizon = st.sidebar.slider("Forecast horizon (days)", 1, 90, 30)
+
+if st.button("Generate forecast"):
+    with st.spinner("Forecasting..."):
+        covariates = make_calendar_covariates(history.start_time(), pd.Timestamp(history.end_time()) + pd.Timedelta(days=horizon))
+        forecast = model.predict(n=horizon, series=history, future_covariates=covariates)
+
+    fig = plot_forecasts(history[-90:], preds={"Forecast": forecast},
+                         title=f"Sales forecast for the next {horizon} days")
+    st.plotly_chart(fig, width="stretch")
+
+    values = forecast.values().flatten()
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total expected sales", f"{values.sum():.0f}")
+    col2.metric("Average per day", f"{values.mean():.1f}")
+    col3.metric("Peak day", f"{values.max():.0f}")
+
+    with st.expander("Raw forecast"):
+        st.dataframe(
+            pd.DataFrame({"date": forecast.time_index, "predicted_sales": values.round(1)}),
+            width="stretch",
+        )
